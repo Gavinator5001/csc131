@@ -1,0 +1,108 @@
+@page
+@model DashboardModel
+@{
+    Layout = "_Layout";
+}
+
+
+<div class="dashboard-container">
+
+    <h1>Conflict Detection Dashboard</h1>
+    <p class="lead">Enter an official's name to search for potential conflicts of interest.</p>
+
+
+    <!-- Search Form -->
+    <form class="dashboard-form" method="post">
+        <input type="text" id="officialName" name="OfficialName" placeholder="Official's Name">
+        <button type="submit">Search</button>
+    </form>
+    @if (Model.SearchResults != null)
+    {
+        <table class="search-results-table">
+            <thead>
+                <tr>
+                    <th>Official Name</th>
+                    <th>Company Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var Official in Model.SearchResults)
+                {
+                    <tr>
+                        <td>
+                            <form method="post" asp-page-handler="Analyze">
+                                <input type="hidden" name="OfficialID" value="@Official.ID" />
+                                <button type="submit" class="btn btn-link">@Official.OfficialName</button>
+                            </form>
+                        </td>
+                        <td>@Official.CompanyName</td>
+                    </tr>
+                }
+            </tbody>
+        </table>    
+
+
+
+    }
+
+    <!-- Results table placeholder -->
+    <table class="dashboard-table">
+        <thead class="table-dark">
+            <tr>
+                <th>Official</th>
+                <th>Department</th>
+                <th>Position</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- hard code test -->
+             <tr>
+                <td>Linus Torvalds</td>
+                <td>Information Technology</td>
+                <td>Lead Developer</td>
+            </tr>
+            <tr>
+                <td>Jane Doe</td>
+                <td>Finance</td>
+                <td>Financial Analyst</td>
+            </tr>
+            <tr>
+                <td>Some Guy</td>
+                <td>Cool Department</td>
+                <td>Guy Stuff</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="dashboard-table">
+    <form method="post">
+        <button type="submit">Run Conflict Analysis</button>
+    </form>
+
+    @if (Model.Conflicts != null)
+    {
+        <h2>Detected Conflicts</h2>
+
+        <table class="dashboard-table">
+            <thead>
+                <tr>
+                    <th>Official</th>
+                    <th>Company</th>
+                    <th>Agenda Item</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var conflict in Model.Conflicts)
+                {
+                    <tr>
+                        <td>@conflict.OfficialName</td>
+                        <td>@conflict.CompanyName</td>
+                        <td>@conflict.AgendaItemTitle</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

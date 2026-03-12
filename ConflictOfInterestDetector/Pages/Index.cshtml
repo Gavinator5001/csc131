@@ -1,0 +1,24 @@
+﻿@page
+@model IndexModel
+@{
+    Layout = "_Layout";
+}
+
+<div class="welcome-container">
+    <h1 class="display-4">Welcome to the FPPC Conflict of Interest Detector</h1>
+    <p>Use this tool to identify potential conflicts of interest for government officials.</p>
+</div>
+
+<div class="welcome-features">
+    <h2>Key Features</h2>
+    <ul>
+        <li><strong>Conflict Detection:</strong> Analyze officials' financial disclosures against upcoming agenda items.</li>
+        <li><strong>Searchable Database:</strong> Look up officials and their associated companies.</li>
+        <li><strong>Detailed Reports:</strong> View comprehensive conflict case details.</li>
+    </ul>
+</div>
+
+<div class="welcome-features">
+    <h2>Get Started</h2>
+    <p>Navigate to the dashboard to begin analyzing potential conflicts of interest.</p>
+    <a class="welcome-button" asp-page="/Dashboard">Go to Dashboard</a>
