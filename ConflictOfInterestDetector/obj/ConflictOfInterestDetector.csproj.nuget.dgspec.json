@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\roseg\\OneDrive\\Desktop\\CSC 131\\Project\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj": {}
+    "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131 Dev Branch\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj": {}
   },
   "projects": {
-    "C:\\Users\\roseg\\OneDrive\\Desktop\\CSC 131\\Project\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj": {
+    "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131 Dev Branch\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\roseg\\OneDrive\\Desktop\\CSC 131\\Project\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
+        "projectUniqueName": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131 Dev Branch\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
         "projectName": "ConflictOfInterestDetector",
-        "projectPath": "C:\\Users\\roseg\\OneDrive\\Desktop\\CSC 131\\Project\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
-        "packagesPath": "C:\\Users\\roseg\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\roseg\\OneDrive\\Desktop\\CSC 131\\Project\\ConflictOfInterestDetector\\obj\\",
+        "projectPath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131 Dev Branch\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
+        "packagesPath": "C:\\Users\\Touch\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131 Dev Branch\\csc131\\ConflictOfInterestDetector\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\roseg\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\Touch\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -37,7 +37,8 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        }
+        },
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net8.0": {
@@ -63,6 +64,24 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.26, 8.0.26]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[8.0.26, 8.0.26]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.26, 8.0.26]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[8.0.26, 8.0.26]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
@@ -71,7 +90,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.418/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.203/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

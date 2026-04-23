@@ -1,5 +1,7 @@
 is_global = true
 build_property.TargetFramework = net8.0
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v8.0
 build_property.TargetPlatformMinVersion = 
 build_property.UsingMicrosoftNETSdkWeb = true
 build_property.ProjectTypeGuids = 
@@ -9,51 +11,53 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = ConflictOfInterestDetector
 build_property.RootNamespace = ConflictOfInterestDetector
-build_property.ProjectDir = C:\Users\roseg\OneDrive\Desktop\CSC 131\Project\ConflictOfInterestDetector\
+build_property.ProjectDir = C:\Users\Touch\OneDrive\Documents\Workspaces\csc131 Dev Branch\csc131\ConflictOfInterestDetector\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\roseg\OneDrive\Desktop\CSC 131\Project\ConflictOfInterestDetector
+build_property.MSBuildProjectDirectory = C:\Users\Touch\OneDrive\Documents\Workspaces\csc131 Dev Branch\csc131\ConflictOfInterestDetector
 build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 8.0
+build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/roseg/OneDrive/Desktop/CSC 131/Project/ConflictOfInterestDetector/Pages/ConflictDetails.cshtml]
+[C:/Users/Touch/OneDrive/Documents/Workspaces/csc131 Dev Branch/csc131/ConflictOfInterestDetector/Pages/ConflictDetails.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29uZmxpY3REZXRhaWxzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/roseg/OneDrive/Desktop/CSC 131/Project/ConflictOfInterestDetector/Pages/Conflicts.cshtml]
+[C:/Users/Touch/OneDrive/Documents/Workspaces/csc131 Dev Branch/csc131/ConflictOfInterestDetector/Pages/Conflicts.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29uZmxpY3RzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/roseg/OneDrive/Desktop/CSC 131/Project/ConflictOfInterestDetector/Pages/Dashboard.cshtml]
+[C:/Users/Touch/OneDrive/Documents/Workspaces/csc131 Dev Branch/csc131/ConflictOfInterestDetector/Pages/Dashboard.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGFzaGJvYXJkLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/roseg/OneDrive/Desktop/CSC 131/Project/ConflictOfInterestDetector/Pages/Error.cshtml]
+[C:/Users/Touch/OneDrive/Documents/Workspaces/csc131 Dev Branch/csc131/ConflictOfInterestDetector/Pages/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRXJyb3IuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/roseg/OneDrive/Desktop/CSC 131/Project/ConflictOfInterestDetector/Pages/Index.cshtml]
+[C:/Users/Touch/OneDrive/Documents/Workspaces/csc131 Dev Branch/csc131/ConflictOfInterestDetector/Pages/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/roseg/OneDrive/Desktop/CSC 131/Project/ConflictOfInterestDetector/Pages/Privacy.cshtml]
+[C:/Users/Touch/OneDrive/Documents/Workspaces/csc131 Dev Branch/csc131/ConflictOfInterestDetector/Pages/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUHJpdmFjeS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/roseg/OneDrive/Desktop/CSC 131/Project/ConflictOfInterestDetector/Pages/Shared/_ValidationScriptsPartial.cshtml]
+[C:/Users/Touch/OneDrive/Documents/Workspaces/csc131 Dev Branch/csc131/ConflictOfInterestDetector/Pages/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/roseg/OneDrive/Desktop/CSC 131/Project/ConflictOfInterestDetector/Pages/_ViewImports.cshtml]
+[C:/Users/Touch/OneDrive/Documents/Workspaces/csc131 Dev Branch/csc131/ConflictOfInterestDetector/Pages/_ViewImports.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/roseg/OneDrive/Desktop/CSC 131/Project/ConflictOfInterestDetector/Pages/_ViewStart.cshtml]
+[C:/Users/Touch/OneDrive/Documents/Workspaces/csc131 Dev Branch/csc131/ConflictOfInterestDetector/Pages/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/roseg/OneDrive/Desktop/CSC 131/Project/ConflictOfInterestDetector/Pages/Shared/_Layout.cshtml]
+[C:/Users/Touch/OneDrive/Documents/Workspaces/csc131 Dev Branch/csc131/ConflictOfInterestDetector/Pages/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = b-nu5zrpjnu8
