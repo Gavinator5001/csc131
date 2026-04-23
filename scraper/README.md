@@ -8,9 +8,9 @@ pip install -r requirements.txt
 python -m playwright install chromium
 ```
 
-Example:
+Run UI:
 
 ```bash
-python -m civic_vote_scraper.cli --url "https://sfgov.legistar.com/Calendar.aspx" --jurisdiction "San Francisco" --politician "Stephen Sherrill" --body-filter "Board of Supervisors" --use-playwright-discovery --limit 10 --out stephen_sherrill_votes.csv
+python civic_vote_scraper_desktop_app_registry.py
 ```
 Takes a while to run just give it time
