@@ -4,12 +4,24 @@ import hashlib
 import io
 import json
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Optional
 from urllib.parse import urlparse, parse_qs
 
 import requests
 from pypdf import PdfReader
+
+from civic_vote_scraper.minutes_db import MinutesDatabase
+
+
+@dataclass
+class MinutesTextArtifact:
+    text: str
+    pdf_path: Path
+    text_path: Path
+    content_sha1: str
+    downloaded: bool
 
 
 def safe_meeting_cache_key(meeting_date: str, body: str, minutes_url: str) -> str:
@@ -23,11 +35,11 @@ def safe_meeting_cache_key(meeting_date: str, body: str, minutes_url: str) -> st
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:20]
 
 
-def fetch_pdf_text(
+def fetch_pdf_text_artifact(
     url: str,
     session: requests.Session | None = None,
     cache_dir: str | Path = "minutes_cache",
-) -> str:
+) -> MinutesTextArtifact:
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -37,7 +49,14 @@ def fetch_pdf_text(
 
     if text_path.exists():
         print(f"[info] using cached minutes text: {text_path}")
-        return text_path.read_text(encoding="utf-8", errors="ignore")
+        content_sha1 = hashlib.sha1(pdf_path.read_bytes()).hexdigest() if pdf_path.exists() else ""
+        return MinutesTextArtifact(
+            text=text_path.read_text(encoding="utf-8", errors="ignore"),
+            pdf_path=pdf_path,
+            text_path=text_path,
+            content_sha1=content_sha1,
+            downloaded=False,
+        )
 
     s = session or requests.Session()
     print(f"[info] downloading minutes pdf: {url}")
@@ -55,7 +74,47 @@ def fetch_pdf_text(
 
     text_path.write_text(text, encoding="utf-8")
     print(f"[info] cached minutes text: {text_path}")
-    return text
+    return MinutesTextArtifact(
+        text=text,
+        pdf_path=pdf_path,
+        text_path=text_path,
+        content_sha1=hashlib.sha1(resp.content).hexdigest(),
+        downloaded=True,
+    )
+
+
+def fetch_pdf_text(
+    url: str,
+    session: requests.Session | None = None,
+    cache_dir: str | Path = "minutes_cache",
+) -> str:
+    artifact = fetch_pdf_text_artifact(url, session=session, cache_dir=cache_dir)
+    return artifact.text
+
+
+def _write_json(path: str | Path, payload: dict) -> None:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _should_include_row(
+    row: dict,
+    *,
+    politician: Optional[str],
+    allowed_names: Optional[set[str]],
+    target_full: str,
+    target_last: str,
+) -> bool:
+    if not politician and not allowed_names:
+        return True
+
+    candidate = row.get("politician_name", "")
+
+    if allowed_names is not None:
+        return matches_allowed_politician(candidate, allowed_names)
+
+    return matches_exact_full_or_last(candidate, target_full, target_last)
 
 
 def normalize_person_token(name: str) -> str:
@@ -318,9 +377,15 @@ def scrape_votes_for_meetings(
     allowed_names: Optional[set[str]] = None,
     cache_dir: str | Path = "minutes_cache",
     text_artifacts_path: str | Path = "minutes_text_index.json",
+    database_path: str | Path | None = None,
+    reparse_existing_minutes: bool = False,
 ) -> List[dict]:
     out: List[dict] = []
     session = requests.Session()
+    database = MinutesDatabase(database_path) if database_path else None
+    if database:
+        database.initialize()
+        print(f"[info] minutes database ready: {database.path}")
 
     target_full, target_last = ("", "")
     if politician:
@@ -337,13 +402,32 @@ def scrape_votes_for_meetings(
         print(f"[info] parsing meeting {meeting_num}: {meeting.meeting_date} | {meeting.body}")
 
         for link in minutes_links:
+            cache_key = safe_meeting_cache_key(meeting.meeting_date or "", meeting.body or "", link.url)
+            if database:
+                minutes_row, is_new = database.upsert_discovered_minutes(meeting, link, cache_key)
+                cache_key = minutes_row.get("minutes_cache_key", cache_key)
+                if minutes_row.get("parsed_at") and not reparse_existing_minutes:
+                    print(f"[info] known minutes already parsed; skipping: {link.url}")
+                    continue
+                if is_new:
+                    print(f"[info] new minutes registered: {link.url}")
+
             try:
-                text = fetch_pdf_text(link.url, session=session, cache_dir=cache_dir)
+                artifact = fetch_pdf_text_artifact(link.url, session=session, cache_dir=cache_dir)
+                text = artifact.text
+                if database:
+                    database.record_download(
+                        cache_key,
+                        pdf_path=artifact.pdf_path,
+                        text_path=artifact.text_path,
+                        content_sha1=artifact.content_sha1,
+                    )
             except Exception as e:
                 print(f"[info] failed to parse minutes PDF: {e}")
+                if database:
+                    database.record_parse_error(cache_key, e)
                 continue
 
-            cache_key = safe_meeting_cache_key(meeting.meeting_date or "", meeting.body or "", link.url)
             url_hash = hashlib.sha1(link.url.encode("utf-8")).hexdigest()
             text_index[cache_key] = {
                 "meeting_date": meeting.meeting_date or "",
@@ -362,25 +446,31 @@ def scrape_votes_for_meetings(
             )
 
             total_rows_parsed += len(rows)
+            if database:
+                database.record_parse_success(cache_key, rows)
+                print(f"[info] stored {len(rows)} vote rows for minutes file")
+
             if total_rows_parsed and total_rows_parsed % 1000 == 0:
                 print(f"[info] vote row parsing progress: {total_rows_parsed} rows parsed")
 
-            if not politician and not allowed_names:
-                out.extend(rows)
-                continue
-
             for row in rows:
-                candidate = row.get("politician_name", "")
-
-                if allowed_names is not None:
-                    if matches_allowed_politician(candidate, allowed_names):
-                        out.append(row)
-                    continue
-
-                if matches_exact_full_or_last(candidate, target_full, target_last):
+                if _should_include_row(
+                    row,
+                    politician=politician,
+                    allowed_names=allowed_names,
+                    target_full=target_full,
+                    target_last=target_last,
+                ):
                     out.append(row)
 
-    Path(text_artifacts_path).write_text(json.dumps(text_index, indent=2, ensure_ascii=False), encoding="utf-8")
+    if database:
+        text_index = database.build_text_index()
+        print(
+            f"[info] database totals: {database.count_minutes()} minutes files, "
+            f"{database.count_vote_rows()} vote rows"
+        )
+
+    _write_json(text_artifacts_path, text_index)
     print(f"[info] wrote minutes text index: {text_artifacts_path}")
     print(f"[info] vote parsing complete: {total_rows_parsed} rows parsed total")
     return out

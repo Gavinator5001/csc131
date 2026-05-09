@@ -108,6 +108,7 @@ class LegistarPlaywrightDiscovery:
     def __init__(self, url: str, jurisdiction: str, body_filter: str = "", headless: bool = True):
         self.url = url
         self.jurisdiction = jurisdiction
+        self.body_filter = body_filter
         self.headless = headless
 
     async def _discover_async(self, max_pages: int = 0, meeting_limit: int = 0):
@@ -130,6 +131,9 @@ class LegistarPlaywrightDiscovery:
 
             print("[info] applying year filter")
             await select_dropdown_item(page, 0, "All Years")
+            if self.body_filter:
+                print("[info] applying body filter")
+                await select_dropdown_item(page, 1, self.body_filter)
 
 
             print("[info] clicking Search Calendar")

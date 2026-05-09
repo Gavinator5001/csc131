@@ -7,6 +7,10 @@ setup(
     install_requires=[
         "beautifulsoup4>=4.12.3",
         "pdfplumber>=0.11.4",
+        "playwright>=1.0",
+        "PyQt5>=5.15",
+        "pypdf>=5.0",
+        "openpyxl>=3.1",
         "requests>=2.32.3",
     ],
 )

@@ -3,3 +3,5 @@ playwright
 requests
 pypdf
 openpyxl
+pdfplumber
+PyQt5

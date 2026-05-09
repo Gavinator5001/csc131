@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "59kHjVmfsWs=",
+  "dgSpecHash": "7v4ADF6/SpU=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131 Dev Branch\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
+  "projectFilePath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Touch\\.nuget\\packages\\bouncycastle.cryptography\\2.6.2\\bouncycastle.cryptography.2.6.2.nupkg.sha512",
     "C:\\Users\\Touch\\.nuget\\packages\\mailkit\\4.15.1\\mailkit.4.15.1.nupkg.sha512",
@@ -31,9 +31,9 @@
       "code": "NU1902",
       "level": "Warning",
       "message": "Package 'MailKit' 4.15.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-9j88-vvj5-vhgr",
-      "projectPath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131 Dev Branch\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
+      "projectPath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131 Dev Branch\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
+      "filePath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
       "libraryId": "MailKit",
       "targetGraphs": [
         "net8.0"

@@ -852,11 +852,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131 Dev Branch\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
+      "projectUniqueName": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
       "projectName": "ConflictOfInterestDetector",
-      "projectPath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131 Dev Branch\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
+      "projectPath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131\\ConflictOfInterestDetector\\ConflictOfInterestDetector.csproj",
       "packagesPath": "C:\\Users\\Touch\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131 Dev Branch\\csc131\\ConflictOfInterestDetector\\obj\\",
+      "outputPath": "C:\\Users\\Touch\\OneDrive\\Documents\\Workspaces\\csc131\\ConflictOfInterestDetector\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Touch\\AppData\\Roaming\\NuGet\\NuGet.Config"
