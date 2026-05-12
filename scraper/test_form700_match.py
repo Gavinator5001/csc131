@@ -1,8 +1,7 @@
 import csv
 from civic_vote_scraper.enrichment.form700_matcher import (
-    parse_form700_entities,
-    match_matters_to_investments,
-    enrich_vote_rows_with_form700,
+    enrich_vote_rows_with_form700_rows,
+    match_vote_rows_against_form700_rows,
 )
 
 votes_path = "votes.csv"
@@ -11,11 +10,13 @@ form700_path = "form700_entities.csv"
 with open(votes_path, newline="", encoding="utf-8") as f:
     votes = list(csv.DictReader(f))
 
-entities = parse_form700_entities(form700_path)
-matches = match_matters_to_investments(votes, entities, min_confidence=0.75)
-enriched = enrich_vote_rows_with_form700(votes, form700_path, min_confidence=0.75)
+with open(form700_path, newline="", encoding="utf-8") as f:
+    form700_rows = list(csv.DictReader(f))
 
-print(f"entities: {len(entities)}")
+matches = match_vote_rows_against_form700_rows(votes, form700_rows, min_confidence=0.75)
+enriched = enrich_vote_rows_with_form700_rows(votes, form700_rows, min_confidence=0.75)
+
+print(f"form700 rows: {len(form700_rows)}")
 print(f"matches: {len(matches)}")
 
 for m in matches[:20]:

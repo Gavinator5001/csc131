@@ -171,23 +171,26 @@ class SettingsDialog(QDialog):
 
         self._path_field(grid, "Project directory", "project_dir", 0, True)
         self._path_field(grid, "Output folder", "output_dir", 1, True)
-        self._path_field(grid, "Form 700 workbook", "form700_xlsx", 2, False)
+        self._text_field(grid, "Form 700 search URL", "form700_search_url", 2, 0)
+        self._text_field(grid, "Form 700 folder", "form700_folder", 2, 1)
         self._text_field(grid, "Page limit", "page_limit", 3, 0)
         self._text_field(grid, "Meeting limit", "meeting_limit", 3, 1)
         self._text_field(grid, "Min confidence", "min_confidence", 4, 0)
         self._text_field(grid, "Text index", "minutes_text_index", 4, 1)
-        self._text_field(grid, "Form 700 registry", "form700_registry", 5, 0)
-        self._text_field(grid, "Entities CSV", "form700_csv_out", 5, 1)
-        self._text_field(grid, "Entities JSON", "form700_json_out", 6, 0)
-        self._text_field(grid, "Matches CSV", "form700_matches_out", 6, 1)
+        self._text_field(grid, "Entities CSV", "form700_csv_out", 5, 0)
+        self._text_field(grid, "Entities JSON", "form700_json_out", 5, 1)
+        self._text_field(grid, "Matches CSV", "form700_matches_out", 6, 0)
 
         checks = QHBoxLayout()
         self.headless = QCheckBox("Run headless")
         self.headless.setChecked(bool(app.values["headless"]))
         self.reparse = QCheckBox("Re-parse known minutes")
-        self.reparse.setChecked(bool(app.values["reparse_existing"]))
+        self.reparse.setChecked(bool(app.values["reparse_existing_minutes"]))
+        self.reparse_form700 = QCheckBox("Re-parse known Form 700 PDFs")
+        self.reparse_form700.setChecked(bool(app.values["reparse_existing_form700s"]))
         checks.addWidget(self.headless)
         checks.addWidget(self.reparse)
+        checks.addWidget(self.reparse_form700)
         checks.addStretch()
         root.addLayout(checks)
 
@@ -236,7 +239,8 @@ class SettingsDialog(QDialog):
             if isinstance(widget, QLineEdit):
                 self.app.set_value(key, widget.text())
         self.app.set_value("headless", self.headless.isChecked())
-        self.app.set_value("reparse_existing", self.reparse.isChecked())
+        self.app.set_value("reparse_existing_minutes", self.reparse.isChecked())
+        self.app.set_value("reparse_existing_form700s", self.reparse_form700.isChecked())
         self.accept()
 
 
@@ -251,24 +255,24 @@ class App(QMainWindow):
 
         default_project_dir = Path(__file__).resolve().parent
         self.values: dict[str, object] = {
-            "url": "https://sfgov.legistar.com/Calendar.aspx",
-            "jurisdiction": "San Francisco",
+            "url": "https://sonoma-county.legistar.com/Calendar.aspx",
+            "jurisdiction": "County of Sonoma",
             "body_filter": "Board of Supervisors",
             "interval": 5,
             "minutes_db": "data/minutes.db",
             "minutes_cache": "data/cache",
             "out_votes": "votes.csv",
+            "form700_search_url": "https://form700search.fppc.ca.gov/Search/SearchFilerForms.aspx",
             "form700_folder": "form700",
             "project_dir": str(default_project_dir),
             "output_dir": str(default_project_dir / "output"),
-            "page_limit": "0",
-            "meeting_limit": "200",
+            "page_limit": "100",
+            "meeting_limit": "0",
             "headless": True,
-            "reparse_existing": False,
+            "reparse_existing_minutes": False,
+            "reparse_existing_form700s": False,
             "min_confidence": "0.75",
             "minutes_text_index": "minutes_text_index.json",
-            "form700_xlsx": "",
-            "form700_registry": "form700_registry.json",
             "form700_csv_out": "form700_entities.csv",
             "form700_json_out": "form700_entities.json",
             "form700_matches_out": "form700_matches.csv",
@@ -765,7 +769,6 @@ class App(QMainWindow):
             ("Minutes cache", self._value_path("minutes_cache")),
             ("Votes CSV", self._value_path("out_votes")),
             ("Minutes text index", self._value_path("minutes_text_index")),
-            ("Form 700 registry", self._value_path("form700_registry")),
             ("Form 700 entities CSV", self._value_path("form700_csv_out")),
             ("Form 700 entities JSON", self._value_path("form700_json_out")),
             ("Form 700 matches CSV", self._value_path("form700_matches_out")),
@@ -800,16 +803,19 @@ class App(QMainWindow):
             ("Calendar URL", str(self.values["url"])),
             ("Jurisdiction", str(self.values["jurisdiction"])),
             ("Body filter", str(self.values["body_filter"])),
+            ("Form 700 search URL", str(self.values["form700_search_url"])),
             ("Run interval", f"{self.values['interval']} minutes"),
             ("Project directory", str(self.values["project_dir"])),
             ("Output folder", str(self.values["output_dir"])),
             ("Minutes database", self._output_path(str(self.values["minutes_db"]))),
             ("Minutes cache", self._output_path(str(self.values["minutes_cache"]))),
             ("Votes CSV", self._output_path(str(self.values["out_votes"]))),
+            ("Form 700 folder", self._output_path(str(self.values["form700_folder"]))),
             ("Meeting limit", str(self.values["meeting_limit"])),
             ("Page limit", str(self.values["page_limit"])),
             ("Headless browser", "Yes" if self.values["headless"] else "No"),
-            ("Re-parse known minutes", "Yes" if self.values["reparse_existing"] else "No"),
+            ("Re-parse known minutes", "Yes" if self.values["reparse_existing_minutes"] else "No"),
+            ("Re-parse known Form 700 PDFs", "Yes" if self.values["reparse_existing_form700s"] else "No"),
         ]
         self.config_table.setRowCount(len(review_items))
         for row, (setting, value) in enumerate(review_items):
@@ -873,6 +879,10 @@ class App(QMainWindow):
             self._output_path(str(self.values["minutes_text_index"])),
             "--minutes-db",
             self._output_path(str(self.values["minutes_db"])),
+            "--form700-search-url",
+            str(self.values["form700_search_url"]).strip(),
+            "--form700-folder",
+            self._output_path(str(self.values["form700_folder"])),
             "--form700-csv-out",
             self._output_path(str(self.values["form700_csv_out"])),
             "--form700-json-out",
@@ -891,12 +901,10 @@ class App(QMainWindow):
             parts += ["--page-limit", str(self.values["page_limit"]).strip()]
         if str(self.values["meeting_limit"]).strip() not in {"", "0"}:
             parts += ["--meeting-limit", str(self.values["meeting_limit"]).strip()]
-        if str(self.values["form700_xlsx"]).strip():
-            parts += ["--form700-xlsx", str(self.values["form700_xlsx"]).strip()]
-        if str(self.values["form700_registry"]).strip():
-            parts += ["--form700-registry", self._output_path(str(self.values["form700_registry"]))]
-        if bool(self.values["reparse_existing"]):
+        if bool(self.values["reparse_existing_minutes"]):
             parts += ["--reparse-existing-minutes"]
+        if bool(self.values["reparse_existing_form700s"]):
+            parts += ["--reparse-existing-form700s"]
         if live:
             parts += ["--live", "--live-interval-minutes", str(self.values["interval"])]
         return parts
