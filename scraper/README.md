@@ -8,10 +8,11 @@ pip install -r requirements.txt
 python -m playwright install chromium
 ```
 
-Example:
+Run UI:
 
 ```bash
-python -m civic_vote_scraper.cli --url "https://sfgov.legistar.com/Calendar.aspx" --jurisdiction "San Francisco" --body-filter "Board of Supervisors" --meeting-limit 10 --headless --out votes.csv
+<<<<<<< HEAD
+python -m civic_vote_scraper.cli --url "https://sonoma-county.legistar.com/Calendar.aspx" --jurisdiction "County of Sonoma" --body-filter "Board of Supervisors" --meeting-limit 10 --headless --out votes.csv
 ```
 Takes a while to run just give it time
 
@@ -35,13 +36,13 @@ On each run it:
 One-time run:
 
 ```bash
-python -m civic_vote_scraper.cli --url "https://sfgov.legistar.com/Calendar.aspx" --jurisdiction "San Francisco" --body-filter "Board of Supervisors" --meeting-limit 200 --headless --minutes-db minutes.db --form700-folder form700 --out votes.csv
+python -m civic_vote_scraper.cli --url "https://sonoma-county.legistar.com/Calendar.aspx" --jurisdiction "County of Sonoma" --body-filter "Board of Supervisors" --meeting-limit 200 --headless --minutes-db minutes.db --form700-folder form700 --out votes.csv
 ```
 
 Live interval run:
 
 ```bash
-python -m civic_vote_scraper.cli --url "https://sfgov.legistar.com/Calendar.aspx" --jurisdiction "San Francisco" --body-filter "Board of Supervisors" --meeting-limit 200 --headless --minutes-db minutes.db --form700-folder form700 --live --live-interval-minutes 60 --out votes.csv
+python -m civic_vote_scraper.cli --url "https://sonoma-county.legistar.com/Calendar.aspx" --jurisdiction "County of Sonoma" --body-filter "Board of Supervisors" --meeting-limit 200 --headless --minutes-db minutes.db --form700-folder form700 --live --live-interval-minutes 60 --out votes.csv
 ```
 
 Useful options:
@@ -75,3 +76,8 @@ Run the PyQt5 desktop app:
 ```bash
 python civic_vote_scraper_desktop_app_registry.py
 ```
+=======
+python civic_vote_scraper_desktop_app_registry.py
+```
+Takes a while to run just give it time
+>>>>>>> a5e2a4910e4157daff9088fa2c76b1cb39a8faaa

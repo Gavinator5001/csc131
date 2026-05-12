@@ -34,8 +34,14 @@ EXCLUDED_COLUMN_NAMES = {
 }
 
 
+def is_schedule_a1_sheet_name(sheet_name: str) -> bool:
+    """Return True when a worksheet name refers to Schedule A1."""
+    normalized = re.sub(r"[^a-z0-9]+", "", str(sheet_name).strip().lower())
+    return normalized == "schedulea1"
+
+
 def load_file_to_dataframe(file_path: str) -> pd.DataFrame:
-    """Load a CSV file or all sheets from an Excel file into one DataFrame."""
+    """Load a CSV file or the Schedule A1 sheet from an Excel file."""
     path = Path(file_path)
 
     if not path.exists():
@@ -47,10 +53,25 @@ def load_file_to_dataframe(file_path: str) -> pd.DataFrame:
         return pd.read_csv(path)
 
     if suffix in {".xls", ".xlsx", ".xlsm"}:
-        sheets = pd.read_excel(path, sheet_name=None)
-        if isinstance(sheets, pd.DataFrame):
-            return sheets
-        return pd.concat(sheets.values(), ignore_index=True)
+        workbook = pd.read_excel(path, sheet_name=None)
+        if isinstance(workbook, pd.DataFrame):
+            return workbook
+
+        schedule_a1_sheet = next(
+            (
+                dataframe
+                for sheet_name, dataframe in workbook.items()
+                if is_schedule_a1_sheet_name(sheet_name)
+            ),
+            None,
+        )
+        if schedule_a1_sheet is not None:
+            return schedule_a1_sheet
+
+        first_sheet_name = next(iter(workbook), None)
+        if first_sheet_name is None:
+            raise ValueError(f"No worksheets found in Excel file: {path}")
+        return workbook[first_sheet_name]
 
     raise ValueError("Unsupported file type. Use .csv, .xls, .xlsx, or .xlsm.")
 
@@ -280,6 +301,23 @@ def save_dataframe_to_postgres(
     return final_table_name
 
 
+def save_dataframe_to_csv(
+    dataframe: pd.DataFrame,
+    source_name: str,
+    output_dir: str | None,
+) -> Path:
+    """Save a processed DataFrame to CSV and return the output path."""
+    if output_dir:
+        target_dir = Path(output_dir)
+    else:
+        target_dir = Path.cwd()
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+    output_path = target_dir / f"{Path(source_name).stem}_processed.csv"
+    dataframe.to_csv(output_path, index=False)
+    return output_path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Read a CSV or Excel file and consolidate duplicate emails."
@@ -294,6 +332,15 @@ def main() -> None:
         "--save-to-postgres",
         action="store_true",
         help="Save each processed DataFrame to PostgreSQL.",
+    )
+    parser.add_argument(
+        "--save-to-csv",
+        action="store_true",
+        help="Save each processed DataFrame to a CSV file.",
+    )
+    parser.add_argument(
+        "--csv-output-dir",
+        help="Directory for processed CSV output. Defaults to the current working directory.",
     )
     parser.add_argument("--db-host", default=DEFAULT_DB_HOST, help="PostgreSQL host")
     parser.add_argument("--db-port", type=int, default=DEFAULT_DB_PORT, help="PostgreSQL port")
@@ -326,6 +373,14 @@ def main() -> None:
         print(f"Rows: {len(consolidated)}")
         print(f"Columns: {len(consolidated.columns)}")
         print(consolidated.head().to_string(index=False))
+
+        if args.save_to_csv:
+            csv_output_path = save_dataframe_to_csv(
+                dataframe=consolidated,
+                source_name=name,
+                output_dir=args.csv_output_dir,
+            )
+            print(f"Saved CSV: {csv_output_path}")
 
         if args.save_to_postgres:
             table_name = save_dataframe_to_postgres(

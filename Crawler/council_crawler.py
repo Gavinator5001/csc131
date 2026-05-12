@@ -59,6 +59,7 @@ class ManifestEntry:
     url: str
     kind: str
     status: str
+    meeting_date: str | None = None
     content_type: str | None = None
     local_path: str | None = None
     referrer: str | None = None
@@ -110,17 +111,22 @@ class CouncilCrawler:
 
         manifest_path = site_root / "manifest.jsonl"
         existing_document_urls = self._load_existing_document_urls(manifest_path)
+        existing_page_urls = self._load_existing_page_urls(manifest_path)
+        previous_document_count = len(existing_document_urls)
+        previous_page_count = len(existing_page_urls)
         if target.mode == "primegov":
             return self._crawl_primegov_target(
                 target=target,
                 manifest_path=manifest_path,
                 existing_document_urls=existing_document_urls,
+                existing_page_urls=existing_page_urls,
             )
         if target.mode == "legistar":
             return self._crawl_legistar_target(
                 target=target,
                 manifest_path=manifest_path,
                 existing_document_urls=existing_document_urls,
+                existing_page_urls=existing_page_urls,
             )
         seen_urls: set[str] = set()
         pages_visited = 0
@@ -151,6 +157,7 @@ class CouncilCrawler:
                         url=url,
                         depth=depth,
                         referrer=referrer,
+                        meeting_date=None,
                         manifest_file=manifest_file,
                     )
                     documents_saved += saved_count
@@ -160,18 +167,22 @@ class CouncilCrawler:
 
                 if pages_visited >= self.max_pages_per_site:
                     continue
+                if url in existing_page_urls:
+                    continue
 
                 result = self._fetch_page(
                     target=target,
                     url=url,
                     depth=depth,
                     referrer=referrer,
+                    meeting_date=None,
                     manifest_file=manifest_file,
                 )
                 if result is None:
                     continue
 
                 pages_visited += 1
+                existing_page_urls.add(url)
                 if pages_visited % 25 == 0:
                     print(
                         f"[{target.name}] pages_visited={pages_visited} "
@@ -207,7 +218,8 @@ class CouncilCrawler:
             "pages_visited": pages_visited,
             "documents_saved": documents_saved,
             "manifest_path": str(manifest_path),
-            "previously_seen_documents": len(existing_document_urls) - documents_saved,
+            "previously_seen_documents": previous_document_count,
+            "previously_seen_pages": previous_page_count,
         }
 
     def _crawl_primegov_target(
@@ -215,25 +227,31 @@ class CouncilCrawler:
         target: CrawlTarget,
         manifest_path: Path,
         existing_document_urls: set[str],
+        existing_page_urls: set[str],
     ) -> dict[str, int | str]:
         pages_visited = 0
         documents_saved = 0
         meetings_processed = 0
         years_to_scrape = set(self.years) if self.years else None
         portal_url = target.browser_root_url or (target.start_urls[0] if target.start_urls else "")
+        previous_document_count = len(existing_document_urls)
+        previous_page_count = len(existing_page_urls)
 
         with manifest_path.open("a", encoding="utf-8") as manifest_file:
-            self._write_manifest(
-                manifest_file,
-                ManifestEntry(
-                    site=target.name,
-                    url=portal_url,
-                    kind="page",
-                    status="fetched",
-                    content_type="text/html",
-                    depth=0,
-                ),
-            )
+            if portal_url and portal_url not in existing_page_urls:
+                self._write_manifest(
+                    manifest_file,
+                    ManifestEntry(
+                        site=target.name,
+                        url=portal_url,
+                        kind="page",
+                        status="fetched",
+                        meeting_date=None,
+                        content_type="text/html",
+                        depth=0,
+                    ),
+                )
+                existing_page_urls.add(portal_url)
 
             discovered_meetings = self._fetch_primegov_meetings(target, years_to_scrape)
 
@@ -247,6 +265,7 @@ class CouncilCrawler:
                             url=portal_url,
                             kind="page",
                             status="error",
+                            meeting_date=None,
                             depth=0,
                             error=f"PrimeGov API did not expose meetings for year: {year}",
                         ),
@@ -258,20 +277,23 @@ class CouncilCrawler:
 
                 meeting_url = str(meeting["meeting_url"])
                 compiled_document_url = str(meeting["compiled_document_url"])
-
-                page_result = self._fetch_page(
-                    target=target,
-                    url=meeting_url,
-                    depth=1,
-                    referrer=portal_url,
-                    manifest_file=manifest_file,
-                )
-                if page_result is None:
-                    continue
-
-                pages_visited += 1
                 meetings_processed += 1
-                self._print_progress(target.name, pages_visited, documents_saved, 0)
+
+                if meeting_url not in existing_page_urls:
+                    page_result = self._fetch_page(
+                        target=target,
+                        url=meeting_url,
+                        depth=1,
+                        referrer=portal_url,
+                        meeting_date=str(meeting.get("meeting_date") or ""),
+                        manifest_file=manifest_file,
+                    )
+                    if page_result is None:
+                        continue
+
+                    pages_visited += 1
+                    existing_page_urls.add(meeting_url)
+                    self._print_progress(target.name, pages_visited, documents_saved, 0)
 
                 if compiled_document_url in existing_document_urls:
                     continue
@@ -281,6 +303,7 @@ class CouncilCrawler:
                     url=compiled_document_url,
                     depth=2,
                     referrer=meeting_url,
+                    meeting_date=str(meeting.get("meeting_date") or ""),
                     manifest_file=manifest_file,
                 )
                 documents_saved += saved_count
@@ -295,7 +318,8 @@ class CouncilCrawler:
             "pages_visited": pages_visited,
             "documents_saved": documents_saved,
             "manifest_path": str(manifest_path),
-            "previously_seen_documents": len(existing_document_urls) - documents_saved,
+            "previously_seen_documents": previous_document_count,
+            "previously_seen_pages": previous_page_count,
             "meetings_processed": meetings_processed,
         }
 
@@ -304,6 +328,7 @@ class CouncilCrawler:
         target: CrawlTarget,
         manifest_path: Path,
         existing_document_urls: set[str],
+        existing_page_urls: set[str],
     ) -> dict[str, int | str]:
         pages_visited = 0
         documents_saved = 0
@@ -311,6 +336,8 @@ class CouncilCrawler:
         agenda_documents_found = 0
         current_year = dt.date.today().year
         years_to_scrape = self.years or tuple(range(current_year, self.min_year - 1, -1))
+        previous_document_count = len(existing_document_urls)
+        previous_page_count = len(existing_page_urls)
 
         with manifest_path.open("a", encoding="utf-8") as manifest_file:
             for year in years_to_scrape:
@@ -335,19 +362,22 @@ class CouncilCrawler:
                         break
 
                     meeting_url = self._normalize_url(event["EventInSiteURL"])
-                    page_result = self._fetch_page(
-                        target=target,
-                        url=meeting_url,
-                        depth=0,
-                        referrer=target.start_urls[0] if target.start_urls else None,
-                        manifest_file=manifest_file,
-                    )
-                    if page_result is None:
-                        continue
-
-                    pages_visited += 1
                     meetings_processed += 1
-                    self._print_progress(target.name, pages_visited, documents_saved, 0)
+                    if meeting_url not in existing_page_urls:
+                        page_result = self._fetch_page(
+                            target=target,
+                            url=meeting_url,
+                            depth=0,
+                            referrer=target.start_urls[0] if target.start_urls else None,
+                            meeting_date=self._normalize_meeting_date(str(event.get("EventDate") or "")),
+                            manifest_file=manifest_file,
+                        )
+                        if page_result is None:
+                            continue
+
+                        pages_visited += 1
+                        existing_page_urls.add(meeting_url)
+                        self._print_progress(target.name, pages_visited, documents_saved, 0)
                     agenda_url = self._normalize_url(str(event.get("EventAgendaFile") or "").strip()) if event.get("EventAgendaFile") else None
                     if not agenda_url:
                         continue
@@ -361,6 +391,7 @@ class CouncilCrawler:
                         url=agenda_url,
                         depth=1,
                         referrer=meeting_url,
+                        meeting_date=self._normalize_meeting_date(str(event.get("EventDate") or "")),
                         manifest_file=manifest_file,
                     )
                     documents_saved += saved_count
@@ -378,7 +409,8 @@ class CouncilCrawler:
             "pages_visited": pages_visited,
             "documents_saved": documents_saved,
             "manifest_path": str(manifest_path),
-            "previously_seen_documents": len(existing_document_urls) - documents_saved,
+            "previously_seen_documents": previous_document_count,
+            "previously_seen_pages": previous_page_count,
             "meetings_processed": meetings_processed,
             "agenda_documents_found": agenda_documents_found,
         }
@@ -389,6 +421,7 @@ class CouncilCrawler:
         url: str,
         depth: int,
         referrer: str | None,
+        meeting_date: str | None,
         manifest_file,
     ) -> tuple[str | None, str] | None:
         try:
@@ -414,6 +447,7 @@ class CouncilCrawler:
                     url=url,
                     kind="page",
                     status="saved" if local_path else "fetched",
+                    meeting_date=meeting_date,
                     content_type=content_type,
                     local_path=str(local_path) if local_path else None,
                     referrer=referrer,
@@ -429,6 +463,7 @@ class CouncilCrawler:
                     url=url,
                     kind="page",
                     status="error",
+                    meeting_date=meeting_date,
                     referrer=referrer,
                     depth=depth,
                     error=str(exc),
@@ -442,6 +477,7 @@ class CouncilCrawler:
         url: str,
         depth: int,
         referrer: str | None,
+        meeting_date: str | None,
         manifest_file,
     ) -> int:
         try:
@@ -456,6 +492,7 @@ class CouncilCrawler:
                         url=url,
                         kind="document",
                         status="skipped_html",
+                        meeting_date=meeting_date,
                         content_type=content_type,
                         referrer=referrer,
                         depth=depth,
@@ -475,6 +512,7 @@ class CouncilCrawler:
                     url=url,
                     kind="document",
                     status="saved",
+                    meeting_date=meeting_date,
                     content_type=content_type,
                     local_path=str(local_path),
                     referrer=referrer,
@@ -491,6 +529,7 @@ class CouncilCrawler:
                     url=url,
                     kind="document",
                     status="error",
+                    meeting_date=meeting_date,
                     referrer=referrer,
                     depth=depth,
                     error=str(exc),
@@ -536,6 +575,18 @@ class CouncilCrawler:
         return output_path
 
     def _load_existing_document_urls(self, manifest_path: Path) -> set[str]:
+        return self._load_existing_urls(manifest_path, kind="document", statuses={"saved"})
+
+    def _load_existing_page_urls(self, manifest_path: Path) -> set[str]:
+        return self._load_existing_urls(manifest_path, kind="page", statuses={"fetched", "saved"})
+
+    def _load_existing_urls(
+        self,
+        manifest_path: Path,
+        *,
+        kind: str,
+        statuses: set[str],
+    ) -> set[str]:
         if not manifest_path.exists():
             return set()
 
@@ -551,7 +602,7 @@ class CouncilCrawler:
                     continue
 
                 url = entry.get("url")
-                if entry.get("kind") == "document" and entry.get("status") == "saved" and url:
+                if entry.get("kind") == kind and entry.get("status") in statuses and url:
                     existing_urls.add(url)
 
         return existing_urls
@@ -725,6 +776,7 @@ class CouncilCrawler:
     def _normalize_primegov_meeting(self, meeting: dict) -> dict[str, str | int] | None:
         title = self._strip_control_characters(str(meeting.get("title") or "")).strip()
         date_text = self._strip_control_characters(str(meeting.get("date") or meeting.get("dateTime") or "")).strip()
+        meeting_date = self._normalize_meeting_date(date_text)
         years = self._extract_years(date_text)
         if not years:
             return None
@@ -763,8 +815,37 @@ class CouncilCrawler:
             "meeting_url": meeting_url,
             "compiled_document_url": compiled_document_url,
             "label": label,
+            "meeting_date": meeting_date or date_text,
             "year": max(years),
         }
+
+    def _normalize_meeting_date(self, value: str) -> str | None:
+        cleaned = self._strip_control_characters(value).strip()
+        if not cleaned:
+            return None
+
+        iso_candidate = cleaned.replace("Z", "+00:00")
+        try:
+            return dt.datetime.fromisoformat(iso_candidate).date().isoformat()
+        except ValueError:
+            pass
+
+        for fmt in (
+            "%m/%d/%Y",
+            "%m/%d/%Y %I:%M %p",
+            "%m/%d/%Y %H:%M",
+            "%B %d, %Y",
+            "%b %d, %Y",
+        ):
+            try:
+                return dt.datetime.strptime(cleaned, fmt).date().isoformat()
+            except ValueError:
+                continue
+
+        match = re.search(r"(20\d{2})-(\d{2})-(\d{2})", cleaned)
+        if match:
+            return f"{match.group(1)}-{match.group(2)}-{match.group(3)}"
+        return cleaned
 
     def _normalize_link(self, base_url: str, href: str) -> str | None:
         href = self._strip_control_characters(href).strip()
@@ -949,3 +1030,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
