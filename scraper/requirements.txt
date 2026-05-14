@@ -2,6 +2,5 @@ beautifulsoup4
 playwright
 requests
 pypdf
-openpyxl
 pdfplumber
 PyQt5

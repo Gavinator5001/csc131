@@ -180,6 +180,7 @@ class SettingsDialog(QDialog):
         self._text_field(grid, "Entities CSV", "form700_csv_out", 5, 0)
         self._text_field(grid, "Entities JSON", "form700_json_out", 5, 1)
         self._text_field(grid, "Matches CSV", "form700_matches_out", 6, 0)
+        self._text_field(grid, "Matches JSON", "form700_matches_json_out", 6, 1)
 
         checks = QHBoxLayout()
         self.headless = QCheckBox("Run headless")
@@ -276,6 +277,7 @@ class App(QMainWindow):
             "form700_csv_out": "form700_entities.csv",
             "form700_json_out": "form700_entities.json",
             "form700_matches_out": "form700_matches.csv",
+            "form700_matches_json_out": "form700_matches.json",
         }
         self.bound_widgets: dict[str, QWidget] = {}
         self.storage_size_labels: dict[str, QLabel] = {}
@@ -502,7 +504,7 @@ class App(QMainWindow):
         body.addLayout(grid)
 
         self._field(grid, "Calendar URL", self._line_edit("url"), 0, 0, 1, 3)
-        self._field(grid, "Jurisdiction", self._combo("jurisdiction", ["San Francisco", "City of Example", "Sonoma County"]), 0, 3)
+        self._field(grid, "Jurisdiction", self._combo("jurisdiction", ["San Francisco", "City of Example", "County of Sonoma"]), 0, 3)
         self._field(
             grid,
             "Body filter (optional)",
@@ -772,6 +774,7 @@ class App(QMainWindow):
             ("Form 700 entities CSV", self._value_path("form700_csv_out")),
             ("Form 700 entities JSON", self._value_path("form700_json_out")),
             ("Form 700 matches CSV", self._value_path("form700_matches_out")),
+            ("Form 700 matches JSON", self._value_path("form700_matches_json_out")),
             ("Form 700 folder", self._value_path("form700_folder")),
         ]
 
@@ -801,7 +804,7 @@ class App(QMainWindow):
 
         review_items = [
             ("Calendar URL", str(self.values["url"])),
-            ("Jurisdiction", str(self.values["jurisdiction"])),
+            ("jurisdiction", str(self.values["jurisdiction"])),
             ("Body filter", str(self.values["body_filter"])),
             ("Form 700 search URL", str(self.values["form700_search_url"])),
             ("Run interval", f"{self.values['interval']} minutes"),
@@ -889,6 +892,8 @@ class App(QMainWindow):
             self._output_path(str(self.values["form700_json_out"])),
             "--form700-matches-out",
             self._output_path(str(self.values["form700_matches_out"])),
+            "--form700-matches-json-out",
+            self._output_path(str(self.values["form700_matches_json_out"])),
             "--min-confidence",
             str(self.values["min_confidence"]).strip(),
         ]

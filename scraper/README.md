@@ -11,7 +11,6 @@ python -m playwright install chromium
 Run UI:
 
 ```bash
-<<<<<<< HEAD
 python -m civic_vote_scraper.cli --url "https://sonoma-county.legistar.com/Calendar.aspx" --jurisdiction "County of Sonoma" --body-filter "Board of Supervisors" --meeting-limit 10 --headless --out votes.csv
 ```
 Takes a while to run just give it time
@@ -59,6 +58,7 @@ Form 700 outputs are written from the database-backed PDF parse:
 - `form700_entities.csv`
 - `form700_entities.json`
 - `form700_matches.csv`
+- `form700_matches.json`
 
 The desktop app exposes the same flow with:
 
@@ -76,8 +76,3 @@ Run the PyQt5 desktop app:
 ```bash
 python civic_vote_scraper_desktop_app_registry.py
 ```
-=======
-python civic_vote_scraper_desktop_app_registry.py
-```
-Takes a while to run just give it time
->>>>>>> a5e2a4910e4157daff9088fa2c76b1cb39a8faaa

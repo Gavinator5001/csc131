@@ -360,6 +360,26 @@ class MinutesDatabase:
             for row in rows
         }
 
+    def fetch_minutes_text_rows(self) -> list[dict]:
+        with self._connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    minutes_cache_key,
+                    meeting_date,
+                    body,
+                    meeting_title,
+                    meeting_url,
+                    minutes_url,
+                    text_path,
+                    pdf_path
+                FROM minutes_files
+                WHERE text_path != ''
+                ORDER BY meeting_date DESC, body
+                """
+            ).fetchall()
+        return [dict(row) for row in rows]
+
     def upsert_form700_filing(self, filing: dict) -> tuple[dict, bool]:
         cache_key = filing["form700_cache_key"]
         now = utc_now()

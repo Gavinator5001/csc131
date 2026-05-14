@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ConflictOfInterestDetector")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8b98071638521985a9673f36d1b0a0062ba8f672")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8dfc47104f66b1849142df102bcc9b31fe182e5c")]
 [assembly: System.Reflection.AssemblyProductAttribute("ConflictOfInterestDetector")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ConflictOfInterestDetector")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

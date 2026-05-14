@@ -14,14 +14,6 @@ STOPWORDS = {
     "partner", "ventures", "capital", "fund", "trust", "series", "class", "common", "preferred"
 }
 
-ALIAS_MAP = {
-    "alphabet": ["google", "youtube", "waymo"],
-    "meta": ["facebook", "instagram", "whatsapp"],
-    "amazon": ["aws", "whole foods"],
-    "berkshire hathaway": ["berkshire"],
-    "exxon mobil": ["exxon", "xom"],
-}
-
 FORM700_HINT_COLUMNS = [
     "entity_name", "raw_value", "issuer", "company", "business entity",
     "investment", "source of income", "source", "asset", "stock", "security", "lender"
@@ -44,9 +36,11 @@ class MatterMatch:
     body: Optional[str]
     matter_title: Optional[str]
     result: Optional[str]
-    matched_company: str
-    matched_alias: str
-    confidence: float
+    minutes_cache_key: str = ""
+    source_url: str = ""
+    matched_company: str = ""
+    matched_alias: str = ""
+    confidence: float = 0.0
     record_type: str = ""
     matched_form700_owner: str = ""
 
@@ -59,8 +53,30 @@ def normalize_company_name(name: str) -> str:
     return " ".join(tokens).strip()
 
 
+def normalize_exact_entity_name(name: str) -> str:
+    text = (name or "").strip().lower()
+    text = re.sub(r"&", " and ", text)
+    text = re.sub(r"[^a-z0-9\s]+", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def normalize_search_text(text: str) -> str:
+    text = (text or "").strip().lower()
+    text = re.sub(r"&", " and ", text)
+    text = re.sub(r"[^a-z0-9\s]+", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def normalize_person_name(name: str) -> str:
     return re.sub(r"\s+", " ", (name or "").strip()).lower()
+
+
+def normalize_person_key(name: str) -> str:
+    text = (name or "").strip().lower()
+    text = re.sub(r"\(cid:\s*\d+\)", " ", text)
+    text = re.sub(r"\bcid\s*\d+\b", " ", text)
+    text = re.sub(r"[^a-z\s]+", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def last_name(name: str) -> str:
@@ -69,17 +85,10 @@ def last_name(name: str) -> str:
 
 
 def alias_candidates(raw_name: str) -> List[str]:
-    base = normalize_company_name(raw_name)
+    base = normalize_exact_entity_name(raw_name)
     if not base:
         return []
-    aliases = {base}
-    parts = base.split()
-    if len(parts) >= 2:
-        aliases.add(" ".join(parts[:2]))
-    if parts:
-        aliases.add(parts[0])
-    aliases.update(ALIAS_MAP.get(base, []))
-    return sorted(a for a in aliases if len(a) >= 3)
+    return [base] if len(base) >= 3 else []
 
 
 def parse_form700_entities(path: str | Path) -> List[InvestmentEntity]:
@@ -114,6 +123,29 @@ def _extract_entity_value(row: dict) -> str:
     return ranked[0][2]
 
 
+def _owner_name_keys(row: dict) -> set[str]:
+    first = str(row.get("owner_first_name", "")).strip()
+    middle = str(row.get("owner_middle_name", "")).strip()
+    last = str(row.get("owner_last_name", "")).strip()
+    full = str(row.get("owner_full_name", "")).strip()
+    if not full:
+        full = " ".join(part for part in [first, middle, last] if part).strip()
+
+    candidates = {
+        full,
+        " ".join(part for part in [first, middle, last] if part),
+        " ".join(part for part in [first, last] if part),
+        " ".join(part for part in [last, first, middle] if part),
+        " ".join(part for part in [last, first] if part),
+    }
+    return {normalize_person_key(candidate) for candidate in candidates if normalize_person_key(candidate)}
+
+
+def _entity_is_owner_name(raw_entity: str, row: dict) -> bool:
+    entity_key = normalize_person_key(raw_entity)
+    return bool(entity_key and entity_key in _owner_name_keys(row))
+
+
 def entities_from_rows(rows: Sequence[dict]) -> List[InvestmentEntity]:
     out = {}
     for row in rows:
@@ -122,7 +154,9 @@ def entities_from_rows(rows: Sequence[dict]) -> List[InvestmentEntity]:
         raw = _extract_entity_value(row)
         if not raw:
             continue
-        norm = normalize_company_name(raw)
+        if _entity_is_owner_name(raw, row):
+            continue
+        norm = normalize_exact_entity_name(raw)
         if not norm:
             continue
 
@@ -154,9 +188,11 @@ def matter_text_blob(matter: dict) -> str:
 
 def score_match(blob: str, entity: InvestmentEntity):
     best = None
+    normalized_blob = normalize_search_text(blob)
     for alias in entity.aliases:
         pattern = r"\b" + re.escape(alias.lower()) + r"\b"
-        if re.search(pattern, blob):
+        normalized_pattern = r"\b" + re.escape(normalize_search_text(alias)) + r"\b"
+        if re.search(pattern, blob.lower()) or re.search(normalized_pattern, normalized_blob):
             score = 0.72
             if alias == entity.normalized_name:
                 score = 0.92
@@ -192,6 +228,8 @@ def match_matters_to_investments(
                     body=matter.get("body"),
                     matter_title=matter.get("matter_title") or matter.get("matter_name"),
                     result=matter.get("result"),
+                    minutes_cache_key=matter.get("minutes_cache_key", ""),
+                    source_url=matter.get("source_url", "") or matter.get("minutes_url", ""),
                     matched_company=entity.raw_name,
                     matched_alias=alias,
                     confidence=confidence,
@@ -263,6 +301,83 @@ def match_vote_rows_against_form700_rows(
     return all_matches
 
 
+def _read_minutes_text(minutes_row: dict) -> str:
+    inline = minutes_row.get("minutes_text", "")
+    if inline:
+        return str(inline)
+
+    text_path = minutes_row.get("text_path", "")
+    if not text_path:
+        return ""
+    path = Path(text_path)
+    if not path.exists():
+        print(f"[warn] minutes text file missing for matching: {path}")
+        return ""
+    return path.read_text(encoding="utf-8", errors="ignore")
+
+
+def minutes_file_to_matter(minutes_row: dict) -> dict:
+    text = _read_minutes_text(minutes_row)
+    title = (
+        minutes_row.get("meeting_title")
+        or f"{minutes_row.get('body', '')} {minutes_row.get('meeting_date', '')}".strip()
+        or "Minutes file"
+    )
+    return {
+        "matter_id": "",
+        "meeting_date": minutes_row.get("meeting_date", ""),
+        "body": minutes_row.get("body", ""),
+        "matter_title": title,
+        "result": "",
+        "minutes_text": text,
+        "minutes_cache_key": minutes_row.get("minutes_cache_key", ""),
+        "source_url": minutes_row.get("minutes_url", "") or minutes_row.get("source_url", ""),
+    }
+
+
+def match_minutes_files_against_form700_rows(
+    minutes_rows: Iterable[dict],
+    form700_rows: Sequence[dict],
+    min_confidence: float = 0.75,
+):
+    rows = list(minutes_rows)
+    entities = entities_from_rows(form700_rows)
+    print(
+        f"[info] scanning {len(rows)} full minutes files against "
+        f"{len(entities)} Form 700 entities"
+    )
+
+    all_matches: List[MatterMatch] = []
+    seen = set()
+    for i, row in enumerate(rows, start=1):
+        if i % 100 == 0:
+            print(f"[info] full-minutes Form 700 match progress: {i} minutes files checked")
+
+        matter = minutes_file_to_matter(row)
+        if not matter.get("minutes_text", "").strip():
+            continue
+
+        matches = match_matters_to_investments(
+            [matter],
+            entities,
+            min_confidence=min_confidence,
+        )
+        for match in matches:
+            key = (
+                match.minutes_cache_key,
+                normalize_person_name(match.matched_form700_owner),
+                normalize_exact_entity_name(match.matched_company),
+                match.matched_alias,
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            all_matches.append(match)
+
+    print(f"[info] full-minutes Form 700 matching complete: {len(all_matches)} total matches")
+    return all_matches
+
+
 def enrich_vote_rows_with_form700_rows(
     vote_rows: Iterable[dict],
     form700_rows: Sequence[dict],
@@ -329,12 +444,21 @@ def enrich_vote_rows_with_form700_rows(
 
 def write_matches_csv(matches, path: str | Path):
     path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = list(asdict(matches[0]).keys()) if matches else [
         "matter_id", "meeting_date", "body", "matter_title", "result",
-        "matched_company", "matched_alias", "confidence", "record_type", "matched_form700_owner"
+        "minutes_cache_key", "source_url", "matched_company", "matched_alias",
+        "confidence", "record_type", "matched_form700_owner"
     ]
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for match in matches:
             writer.writerow(asdict(match))
+
+
+def write_matches_json(matches, path: str | Path):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = [asdict(match) for match in matches]
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
