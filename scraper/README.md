@@ -3,17 +3,10 @@
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate
+source .venv/scripts/activate
 pip install -r requirements.txt
 python -m playwright install chromium
 ```
-
-Run UI:
-
-```bash
-python -m civic_vote_scraper.cli --url "https://sonoma-county.legistar.com/Calendar.aspx" --jurisdiction "County of Sonoma" --body-filter "Board of Supervisors" --meeting-limit 10 --headless --out votes.csv
-```
-Takes a while to run just give it time
 
 ## Live minutes and Form 700 sync
 
@@ -71,6 +64,7 @@ The desktop app exposes the same flow with:
 - `Re-parse known minutes`: forces already parsed database records to be parsed again.
 - `Re-parse known Form 700 PDFs`: re-runs PDF parsing for saved filings.
 
+## (RECOMMENDED)  
 Run the PyQt5 desktop app:
 
 ```bash
